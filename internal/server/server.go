@@ -22,8 +22,8 @@ type Logger interface {
 }
 
 type App interface {
-	Set(key string, value interface{}) bool
-	Get(key string) (interface{}, bool)
+	Set(key string, value []byte) bool
+	Get(key string) ([]byte, bool)
 	Clear()
 	Fill(byteImg []byte, length int, width int) ([]byte, error)
 	ProxyRequest(url string, headers http.Header) ([]byte, int, error)

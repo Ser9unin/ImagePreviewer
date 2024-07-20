@@ -42,10 +42,9 @@ func (a *api) fill(w http.ResponseWriter, r *http.Request) {
 	cacheData, ok := a.app.Get(fileName)
 	if ok {
 		a.logger.Info("image get from cache")
-		cacheResponse := cacheData.([]byte)
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(cacheResponse)
+		w.Write(cacheData)
 		return
 	} else {
 		externalData, httpStatus, err := a.app.ProxyRequest(targetURL, r.Header)
