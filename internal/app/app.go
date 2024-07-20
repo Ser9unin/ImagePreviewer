@@ -14,9 +14,9 @@ type App struct {
 	logger *zap.Logger
 }
 
-func (a *App) Set(key string, value interface{}) bool { return false }
-func (a *App) Get(key string) (interface{}, bool)     { return nil, false }
-func (a *App) Clear()                                 {}
+func (a *App) Set(key string, value []byte) bool { return false }
+func (a *App) Get(key string) ([]byte, bool)     { return nil, false }
+func (a *App) Clear()                            {}
 func (a *App) Fill(byteImg []byte, width int, height int) ([]byte, error) {
 	return nil, nil
 }
