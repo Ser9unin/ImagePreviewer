@@ -2,7 +2,7 @@ name: ImagePreviewer
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 env:
   GO111MODULE: "on"
