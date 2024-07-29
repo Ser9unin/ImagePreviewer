@@ -8,15 +8,14 @@
 масштабирующий/обрезающий их до нужного формата и возвращающий пользователю.
 
 ## Основной обработчик
-http://localhost:8000/fill/300/200/raw.githubusercontent.com/OtusGolang/final_project/master/examples/image-previewer/_gopher_original_1024x504.jpg
+http://localhost:8000/fill/300/200/images.wallpaperscraft.com/image/single/beaver_cute_art_127732_1366x768.jpg
 
 <-- микросервис --><- размеры превью -><--------- URL исходного изображения --------------------------------->
 
 В URL выше:
 - http://localhost:8000/fill/300/200/ - endpoint нашего сервиса,
 в котором 300x200 - это размеры финального изображения.
-- https://raw.githubusercontent.com/OtusGolang/final_project/master/examples/image-previewer/_gopher_original_1024x504.jpg - 
-адрес исходного изображения;
+- https://images.wallpaperscraft.com/image/single/beaver_cute_art_127732_1366x768.jpg - адрес исходного изображения;
 
 в API сервиса добавляется URL исходного изображения, утилита скачивает его, изменяет до необходимых размеров и возвращает.
 
