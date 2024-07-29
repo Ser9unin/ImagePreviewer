@@ -1,29 +1,30 @@
 package server
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"strconv"
+	"os"
 	"strings"
 )
 
 type api struct {
-	app    App
-	logger Logger
+	app         App
+	logger      Logger
+	storagePath string
 }
 
 func newAPI(app App, logger Logger) api {
 	return api{
-		app:    app,
-		logger: logger,
+		app:         app,
+		logger:      logger,
+		storagePath: "./internal/storage/",
 	}
 }
 
-func (a *api) greetings(w http.ResponseWriter, r *http.Request) {
+func (a *api) greetings(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("This is my previewer!"))
+	w.Write([]byte("<h1>This is my previewer!</h1>"))
 }
 
 func (a *api) fill(w http.ResponseWriter, r *http.Request) {
@@ -31,52 +32,51 @@ func (a *api) fill(w http.ResponseWriter, r *http.Request) {
 	paramsStr, err := url.Parse(urlString)
 	if err != nil {
 		a.logger.Error(err.Error())
-		return
+		ErrorJSON(w, r, http.StatusBadRequest, err, "not correct path")
 	}
-
-	width, height, targetURL, fileName, err := parseUrlParams(paramsStr.Path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cacheData, ok := a.app.Get(fileName)
+	cachePath, ok := a.app.Get(paramsStr.Path)
 	if ok {
-		a.logger.Info("image get from cache")
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(cacheData)
-		return
-	} else {
-		externalData, httpStatus, err := a.app.ProxyRequest(targetURL, r.Header)
-		if err != nil {
-			ErrorJSON(w, r, httpStatus, err, "fail proxy request")
-		}
-
-		response, err := a.app.Fill(externalData, width, height)
+		filePath := a.storagePath + cachePath.(string)
+		fileFromDisc, err := os.ReadFile(filePath)
 		if err != nil {
 			a.logger.Error(err.Error())
+			a.logger.Info("image not found on disk")
+			a.externalUpload(w, r, paramsStr.Path)
+		} else {
+			a.logger.Info("image get from cache")
+			w.Header().Set("Get_from_cache", "1")
+			responseImage(w, r, http.StatusOK, fileFromDisc)
 		}
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(response)
+	} else {
+		a.externalUpload(w, r, paramsStr.Path)
 	}
 }
 
-func parseUrlParams(paramsStr string) (width, height int, targetURL, fileName string, err error) {
+func (a *api) externalUpload(w http.ResponseWriter, r *http.Request, paramsStr string) {
+	paramsURL := parseTargetURL(paramsStr)
+	targetReq, httpStatus, err := a.app.ProxyHeader(paramsURL, r.Header)
+	if err != nil {
+		a.logger.Error(err.Error())
+		ErrorJSON(w, r, httpStatus, err, "fail proxy request header")
+		return
+	}
+	externalData, httpStatus, err := a.app.FetchExternalData(targetReq)
+	if err != nil {
+		a.logger.Error(err.Error())
+		ErrorJSON(w, r, httpStatus, err, "fail fetch data request")
+		return
+	}
+	response, err := a.app.Fill(externalData, paramsStr)
+	if err != nil {
+		a.logger.Error(err.Error())
+		ErrorJSON(w, r, httpStatus, err, "fail fetch data")
+		return
+	}
+	w.Header().Set("get_from_remote_server", "1")
+	responseImage(w, r, httpStatus, response)
+}
+
+func parseTargetURL(paramsStr string) string {
 	splitParams := strings.Split(paramsStr, "/")
-	width, err = strconv.Atoi(splitParams[1])
-	if err != nil {
-		return 0, 0, "", "", fmt.Errorf("wrong width data: %s", err)
-	}
-	height, err = strconv.Atoi(splitParams[2])
-	if err != nil {
-		return 0, 0, "", "", fmt.Errorf("wrong height data: %s", err)
-	}
-
-	targetURL = strings.Join(splitParams[:2], "/")
-	sLen := len(splitParams) - 1
-
-	fileName = splitParams[1] + "_" + splitParams[2] + "_" + splitParams[sLen]
-
-	return width, height, targetURL, fileName, nil
+	return strings.Join(splitParams[4:], "/")
 }

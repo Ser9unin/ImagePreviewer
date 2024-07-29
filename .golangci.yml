@@ -5,6 +5,17 @@ linters-settings:
   funlen:
     lines: 150
     statements: 80
+  depguard:
+   rules:
+    main:
+     files:
+     - "**/internal/**/*.go"
+     allow:
+     - $gostd
+     - github.com/stretchr/testify
+     - github.com/disintegration/imaging
+     - github.com/Ser9unin/ImagePrev/internal/config
+
 
 linters:
   disable-all: true

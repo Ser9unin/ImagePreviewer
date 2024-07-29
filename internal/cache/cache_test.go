@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var cap config.CacheCfg
+var capCache config.CacheCfg
 
 func TestCache(t *testing.T) {
 	t.Run("empty cache", func(t *testing.T) {
-		cap.Capacity = 10
-		c := NewCache(cap)
+		capCache.Capacity = 10
+		c := NewCache(capCache)
 
 		_, ok := c.Get("aaa")
 		require.False(t, ok)
@@ -25,8 +25,8 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("simple", func(t *testing.T) {
-		cap.Capacity = 5
-		c := NewCache(cap)
+		capCache.Capacity = 5
+		c := NewCache(capCache)
 
 		wasInCache := c.Set("aaa", 100)
 		require.False(t, wasInCache)
@@ -53,31 +53,26 @@ func TestCache(t *testing.T) {
 		require.False(t, ok)
 		require.Nil(t, val)
 	})
-
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
-	})
 }
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-	cap.Capacity = 10
+func TestCacheMultithreading(_ *testing.T) {
+	capCache.Capacity = 10
 
-	c := NewCache(cap)
+	c := NewCache(capCache)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 1_000_000; i++ {
-			c.Set(Key(strconv.Itoa(i)), i)
+			c.Set(strconv.Itoa(i), i)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 1_000_000; i++ {
-			c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
+			c.Get(strconv.Itoa(rand.Intn(1_000_000))) //nolint:gosec
 		}
 	}()
 

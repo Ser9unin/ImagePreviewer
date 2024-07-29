@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// statusWriter is custom http.ResponseWriter that captures status and size of response
+// statusWriter is custom http.ResponseWriter that captures status and size of response.
 type statusWriter struct {
 	http.ResponseWriter
 	status int
@@ -31,7 +30,7 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
-func HttpLogger(next http.HandlerFunc) http.HandlerFunc {
+func HTTPLogger(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		sw := statusWriter{ResponseWriter: w}
@@ -62,32 +61,11 @@ func HttpLogger(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func CheckHttpRequest(client *http.Client, request string) ([]byte, error) {
-	req, err := http.NewRequest("GET", request, nil)
-	if err != nil {
-		err = fmt.Errorf("запрос не сформирован: %w", err)
-		return nil, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		err = fmt.Errorf("запрос не отправлен: %w", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		err = fmt.Errorf("не прочитано тело запроса: %w", err)
-		return nil, err
-	}
-	return body, nil
-}
-
-func CheckHttpMethod(next http.HandlerFunc) http.HandlerFunc {
+func CheckHTTPMethod(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		next(w, r)
 		if r.Method != http.MethodGet {
-			//api.ErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("bad method: %s", r.Method), "method should be get")
+			ErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("bad method: %s", r.Method), "method should be get")
 			return
 		}
 	}
